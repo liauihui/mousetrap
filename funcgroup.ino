@@ -30,10 +30,6 @@ bool IsAtCommand(const String& s)
 }
 
 //-------------------------------------------------------------
-
-
-
-
 float GetCentimeterUltrasonic(const Ultrasonic& ult, const bool& isSerialPrint)
 {
   long ultTiming = ultra.timing();  // ultra Object
@@ -53,5 +49,36 @@ float GetCentimeterUltrasonic(const Ultrasonic& ult, const bool& isSerialPrint)
 
   return Cm;
 }
+//-----------------------
+bool UltraCentimeterMayActiveMotor(const Ultrasonic& ultra, const bool& isWriteSerial )
+{
+    long ultTiming = ultra.timing();  // ultra Object
+    float calCentimeter = ultra.convert(ultTiming, Ultrasonic::CM); // 計算距離，單位: 公分
+    if( isWriteSerial ) { 
+      if( 0.0 != calCentimeter ){ 
+        Serial.println(String("Centimeter=")+String(calCentimeter));
+        delay(1000);
+      }
+    }
 
+    if( 0 == calCentimeter ) { // POWER OFF, Voltage=0 
+      return false; //MOTOR INACTIVE    
+    }  
+    
+    static int staPreviousDistance=1024; // cm
+    if( calCentimeter > ACTIVE_DISTANCE || staPreviousDistance > ACTIVE_DISTANCE) { 
+      staPreviousDistance=calCentimeter;  //not yet.
+      return false; //inactive
+    }
+  
+    // ACTIVE MOTOR 
+    staPreviousDistance=1024;
+    //Serial.println("ActiveByUltrasonic");
+    ServoMotorControl();
+    bluetoothSerial.println("Mousetrap:Got It!");
+    delay(100);
+    
+    return true; //active
+}
+//---------------------------
 
